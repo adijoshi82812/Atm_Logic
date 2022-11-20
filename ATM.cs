@@ -22,6 +22,7 @@ namespace ATM {
                 Console.WriteLine("----------------");
                 Console.Write("[1] Add a user: ");
                 Console.Write("[2] Deposit: ");
+                Console.Write("[3] View Balance: ");
                 choice = Convert.ToInt32(Console.ReadLine());
                 
                 switch(choice) {
@@ -39,9 +40,20 @@ namespace ATM {
                     case 2:
                         try{
                             Console.WriteLine("----------------------");
-                            Console.WriteLine("Enter account number: ");
+                            Console.Write("Enter account number: ");
                             long account_number = (long)Convert.ToDouble(Console.ReadLine());
                             deposit(account_number);
+                        } catch(Exception e) {
+                            Console.WriteLine(e.Message);
+                        }
+                        break;
+                        
+                    case 3:
+                        try{
+                            Console.WriteLine("------------------");
+                            Console.Write("Enter account number: ");
+                            long account_number = (long)Convert.ToDouble(Console.ReadLine());
+                            view_balance(account_number);
                         } catch(Exception e) {
                             Console.WriteLine(e.Message);
                         }
@@ -80,7 +92,7 @@ namespace ATM {
         }
         
         public static void add_user() {
-            Console.WriteLine("Enter name: ");
+            Console.Write("Enter name: ");
             string name = Console.ReadLine();
             
             Random r = new Random();
@@ -148,6 +160,7 @@ namespace ATM {
                 bool success = verify(uf2);
                 if(!success) {
                     Console.WriteLine("Wrong temp passcode");
+                    Console.WriteLine("-------------------");
                     deposit(account_number);
                     return true;
                 }
@@ -155,34 +168,42 @@ namespace ATM {
                 verify_passcode(uf2);
             }
             
-            Console.WriteLine("Enter amount: ");
+            Console.Write("Enter amount: ");
             uint amount = (uint)Convert.ToInt32(Console.ReadLine());
-            uf2.amount += amount;
+            bool successful_deposit = send_deposit(uf2, amount);
+            
+            if(successful_deposit) {
+                Console.WriteLine("Deposited {0} to {1}", amount, uf2.account_number);
+            } else {
+                throw new Exception("Something went wrong");
+            }
             
             return true;
         }
         
         public static bool verify(UserInfo uf) {
-            Console.WriteLine("Enter your temp passcode: ");
+            Console.Write("Enter your temp passcode: ");
             uint temp_passcode = (uint)Convert.ToInt32(Console.ReadLine());
             
             if(uf.passcode == temp_passcode) {
                 while(true){
-                    Console.WriteLine("Enter new passcode: ");
+                    Console.Write("Enter new passcode: ");
                     uint passcode = (uint)Convert.ToInt32(Console.ReadLine());
                     
-                    Console.WriteLine("Enter new passcode again: ");
+                    Console.Write("Enter new passcode again: ");
                     uint passcodeAgain = (uint)Convert.ToInt32(Console.ReadLine());
                     
                     isFourDigits(passcode);
                     
                     if(passcode != passcodeAgain) {
                         Console.WriteLine("Passcodes different");
+                        Console.WriteLine("-------------------");
                         continue;
                     } else {
                         uf.passcode = passcode;
                         uf.has_verified = true;
                         Console.WriteLine("You have been verified");
+                        Console.WriteLine("----------------------");
                         return true;
                     }
                 }
@@ -192,16 +213,67 @@ namespace ATM {
         }
         
         public static bool verify_passcode(UserInfo uf) {
-            Console.WriteLine("Enter your passcode: ");
+            Console.Write("Enter your passcode: ");
             uint passcode = (uint)Convert.ToInt32(Console.ReadLine());
             
             if(passcode != uf.passcode) {
-                Console.WriteLine("Wrong passcode: ");
+                Console.WriteLine("Wrong passcode");
+                Console.WriteLine("--------------");
                 verify_passcode(uf);
                 return true;
             } else {
                 return true;
             }
+        }
+        
+        public static bool send_deposit(UserInfo uf, uint amount) {
+            uint amount_before = uf.amount;
+            uf.amount = uf.amount + amount;
+            
+            if(uf.amount > amount_before) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        
+        public static void view_balance(long account_number) {
+            int exists = 0;
+            bool is_verified = false;
+            UserInfo uf2 = new UserInfo();
+            foreach(UserInfo uf in user_info) {
+                if(uf.account_number == account_number) {
+                    exists = 1;
+                    is_verified = uf.has_verified;
+                    uf2 = uf;
+                    break;
+                }
+            }
+            
+            if(!is_verified) {
+                Console.WriteLine("Please verify yourself");
+                goto END;
+            }
+            
+            ONE:
+            if(exists != 1) {
+                Console.WriteLine("Account not found");
+            } else {
+                Console.Write("Enter your passcode: ");
+                uint passcode = (uint)Convert.ToInt32(Console.ReadLine());
+                
+                if(passcode != uf2.passcode) {
+                    Console.WriteLine("Wrong passcode");
+                    Console.WriteLine("--------------");
+                    goto ONE;
+                } else {
+                    Console.WriteLine("Account Number: {0}", uf2.account_number);
+                    Console.WriteLine("Account Holder Name: {0}", uf2.name);
+                    Console.WriteLine("Account Balance: {0}", uf2.amount);
+                }
+            }
+            
+            END:;
         }
     }
 }
