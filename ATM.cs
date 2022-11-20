@@ -20,9 +20,10 @@ namespace ATM {
             int choice;
             while(true) {
                 Console.WriteLine("----------------");
-                Console.Write("[1] Add a user: ");
-                Console.Write("[2] Deposit: ");
-                Console.Write("[3] View Balance: ");
+                Console.Write("[1] Add a user ");
+                Console.Write("[2] Deposit ");
+                Console.Write("[3] View Balance ");
+                Console.Write("[4] Verify: ");
                 choice = Convert.ToInt32(Console.ReadLine());
                 
                 switch(choice) {
@@ -38,7 +39,7 @@ namespace ATM {
                         break;
                         
                     case 2:
-                        try{
+                        try {
                             Console.WriteLine("----------------------");
                             Console.Write("Enter account number: ");
                             long account_number = (long)Convert.ToDouble(Console.ReadLine());
@@ -49,11 +50,19 @@ namespace ATM {
                         break;
                         
                     case 3:
-                        try{
+                        try {
                             Console.WriteLine("------------------");
                             Console.Write("Enter account number: ");
                             long account_number = (long)Convert.ToDouble(Console.ReadLine());
                             view_balance(account_number);
+                        } catch(Exception e) {
+                            Console.WriteLine(e.Message);
+                        }
+                        break;
+                        
+                    case 4:
+                        try {
+                            verify();
                         } catch(Exception e) {
                             Console.WriteLine(e.Message);
                         }
@@ -274,6 +283,61 @@ namespace ATM {
             }
             
             END:;
+        }
+        
+        public static void verify() {
+            Console.WriteLine("------------------");
+            Console.Write("Enter account number: ");
+            long account_number = (long)Convert.ToDouble(Console.ReadLine());
+            
+            int exists = 0;
+            UserInfo uf2 = new UserInfo();
+            bool is_verified = false;
+            foreach(UserInfo uf in user_info) {
+                if(uf.account_number == account_number) {
+                    exists = 1;
+                    is_verified = uf.has_verified;
+                    uf2 = uf;
+                    break;
+                }
+            }
+            
+            ONE:
+            if(exists != 1) {
+                throw new Exception("Account does not exists");
+            } else if(is_verified) {
+                throw new Exception("Account already verified");
+            } else {
+                Console.WriteLine("----------------------");
+                Console.Write("Enter your temp passcode: ");
+                uint temp_passcode = (uint)Convert.ToInt32(Console.ReadLine());
+                
+                if(temp_passcode != uf2.passcode) {
+                    Console.WriteLine("Wrong temp passcode");
+                    goto ONE;
+                } 
+                else
+                {
+                    TWO:
+                    Console.Write("Enter new passcode: ");
+                    uint passcode = (uint)Convert.ToInt32(Console.ReadLine());
+                    
+                    Console.Write("Enter passcode again: ");
+                    uint passcode_verify = (uint)Convert.ToInt32(Console.ReadLine());
+                    
+                    if(passcode != passcode_verify) {
+                        Console.WriteLine("Passcodes does not match");
+                        Console.WriteLine("------------------------");
+                        goto TWO;
+                    } else {
+                        uf2.passcode = passcode;
+                        uf2.has_verified = true;
+                        goto END;
+                    }
+                }
+            }
+            END:
+            Console.WriteLine("{0} verified and updated", uf2.account_number);
         }
     }
 }
